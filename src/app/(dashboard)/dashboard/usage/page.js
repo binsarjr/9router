@@ -34,9 +34,10 @@ function UsageContent() {
 
   const handleTabChange = (value) => {
     if (value === activeTab) return;
-    const params = new URLSearchParams(searchParams);
+    const params = new URLSearchParams();
+    // Only carry over tab — drop stale query params that may stick in cache
     params.set("tab", value);
-    router.push(`/dashboard/usage?${params.toString()}`, { scroll: false });
+    router.replace(`/dashboard/usage?${params.toString()}`, { scroll: false });
   };
 
   return (
