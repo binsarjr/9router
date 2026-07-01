@@ -129,14 +129,17 @@ const CC_DECOY_TOOLS = [
  * Apply Claude cloaking to request body:
  * 1. Inject billing header as first system block
  * 2. Inject fake user ID into metadata (JSON format, session_id aligned with X-Claude-Code-Session-Id)
- * Only applies when using OAuth token (sk-ant-oat).
+ * Only applies when using OAuth token (sk-ant-oat) — UNLESS `force` is set, which is used by
+ * fingerprint-preserving compatible nodes (Claude Code Compatible) whose upstream gateway gates on
+ * the Claude Code body signature (metadata.user_id in JSON form) even with a plain apiKey.
  * @param {object} body - Claude API request body
  * @param {string} apiKey - API key or OAuth token
  * @param {string} [sessionId] - Session ID to align with X-Claude-Code-Session-Id header
+ * @param {boolean} [force] - Apply even when the key is not an OAuth token
  * @returns {object} Modified body
  */
-export function applyCloaking(body, apiKey, sessionId) {
-  if (!apiKey || !apiKey.includes("sk-ant-oat")) return body;
+export function applyCloaking(body, apiKey, sessionId, force = false) {
+  if (!apiKey || (!force && !apiKey.includes("sk-ant-oat"))) return body;
 
   const result = { ...body };
 

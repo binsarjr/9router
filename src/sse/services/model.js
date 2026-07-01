@@ -54,6 +54,19 @@ export async function getModelInfo(modelStr) {
         return { provider: matchedAnthropic.id, model: parsed.model };
       }
 
+      // Fingerprint-preserving compatible nodes (Claude Code / Codex CLI signature kept intact).
+      const claudeCodeNodes = await getProviderNodes({ type: "claude-code-compatible" });
+      const matchedClaudeCode = claudeCodeNodes.find((node) => node.prefix === parsed.providerAlias);
+      if (matchedClaudeCode) {
+        return { provider: matchedClaudeCode.id, model: parsed.model };
+      }
+
+      const codexNodes = await getProviderNodes({ type: "codex-compatible" });
+      const matchedCodex = codexNodes.find((node) => node.prefix === parsed.providerAlias);
+      if (matchedCodex) {
+        return { provider: matchedCodex.id, model: parsed.model };
+      }
+
       const embeddingNodes = await getProviderNodes({ type: "custom-embedding" });
       const matchedEmbedding = embeddingNodes.find((node) => node.prefix === parsed.providerAlias);
       if (matchedEmbedding) {

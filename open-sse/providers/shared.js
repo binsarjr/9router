@@ -49,9 +49,15 @@ export const CLAUDE_CLI_SPOOF_HEADERS = {
 
 // Full Codex CLI fingerprint — required by gateways that gate on the official Codex client identity.
 // Mirrors registry/codex.js transport.headers (the real `codex` CLI signature).
+// The cavoti Codex gate returns 403 CODEX_OFFICIAL_CLIENT_REQUIRED unless an `x-codex-turn-metadata`
+// header is PRESENT — it checks presence, not contents — so we send a synthetic, git-safe constant
+// (the real Codex CLI leaks the workspace git remote in this header; we never do). See the 📓 Buku
+// Catatan note `codex-direct-cavoti.md`.
 export const CODEX_CLI_SPOOF_HEADERS = {
-  originator: "codex_cli_rs",
-  "User-Agent": "codex_cli_rs/0.136.0"
+  originator: "codex_exec",
+  version: "0.142.4",
+  "User-Agent": "codex_exec/0.142.4 (Ubuntu 24.4.0; x86_64) screen.xterm-256color (codex_exec; 0.142.4)",
+  "x-codex-turn-metadata": JSON.stringify({ request_kind: "turn", thread_source: "user" })
 };
 
 // Shared baseUrls

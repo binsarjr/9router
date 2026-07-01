@@ -314,10 +314,16 @@ export function prepareClaudeRequest(body, provider = null, apiKey = null, conne
   }
 
   // Apply cloaking for OAuth tokens (billing header + fake user ID)
-  // session_id in user_id must match X-Claude-Code-Session-Id for fingerprint consistency
-  if ((provider === "claude" || provider?.startsWith("anthropic-compatible")) && apiKey) {
+  // session_id in user_id must match X-Claude-Code-Session-Id for fingerprint consistency.
+  // Claude Code Compatible nodes always cloak (force) — their gateway gates on the CC body
+  // signature (metadata.user_id JSON) even though they authenticate with a plain apiKey.
+  const isClaudeCodeCompatible = provider?.startsWith("claude-code-compatible");
+  if (
+    (provider === "claude" || provider?.startsWith("anthropic-compatible") || isClaudeCodeCompatible) &&
+    apiKey
+  ) {
     const sid = sessionId || resolveSessionId({ headers: rawHeaders, body, connectionId, scope: "claude" });
-    body = applyCloaking(body, apiKey, sid);
+    body = applyCloaking(body, apiKey, sid, isClaudeCodeCompatible);
   }
 
   return body;
