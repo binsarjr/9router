@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getProviderConnectionById } from "@/models";
-import { isOpenAICompatibleProvider, isAnthropicCompatibleProvider } from "@/shared/constants/providers";
+import { isOpenAICompatibleProvider, isAnthropicCompatibleProvider, isClaudeCodeCompatibleProvider, isCodexCompatibleProvider } from "@/shared/constants/providers";
 import { GEMINI_CONFIG } from "@/lib/oauth/constants/oauth";
 import { refreshGoogleToken, updateProviderCredentials } from "@/sse/services/tokenRefresh";
 import { resolveOllamaLocalHost } from "open-sse/config/providers.js";
@@ -398,7 +398,8 @@ export async function GET(request, { params }) {
       return NextResponse.json({ error: "Connection not found" }, { status: 404 });
     }
 
-    if (isOpenAICompatibleProvider(connection.provider)) {
+    // Codex Compatible lists models like an OpenAI endpoint (GET /models, Bearer).
+    if (isOpenAICompatibleProvider(connection.provider) || isCodexCompatibleProvider(connection.provider)) {
       const baseUrl = connection.providerSpecificData?.baseUrl;
       if (!baseUrl) {
         return NextResponse.json({ error: "No base URL configured for OpenAI compatible provider" }, { status: 400 });
@@ -431,7 +432,8 @@ export async function GET(request, { params }) {
       });
     }
 
-    if (isAnthropicCompatibleProvider(connection.provider)) {
+    // Claude Code Compatible lists models like an Anthropic endpoint (GET /models, x-api-key + Bearer).
+    if (isAnthropicCompatibleProvider(connection.provider) || isClaudeCodeCompatibleProvider(connection.provider)) {
       let baseUrl = connection.providerSpecificData?.baseUrl;
       if (!baseUrl) {
         return NextResponse.json({ error: "No base URL configured for Anthropic compatible provider" }, { status: 400 });

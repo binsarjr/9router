@@ -27,6 +27,30 @@ const VARIANT_CONFIG = {
     errorLabel: "Anthropic Compatible",
     hasApiType: false,
   },
+  // Fingerprint-preserving variants: same base URL + API key form, but outgoing requests keep the
+  // FULL Claude Code / Codex client signature (for gateways that gate on the official-client identity).
+  "claude-code": {
+    title: "Add Claude Code Compatible",
+    type: "claude-code-compatible",
+    defaultBaseUrl: "https://api.anthropic.com/v1",
+    namePlaceholder: "Claude Code Compatible (Prod)",
+    prefixPlaceholder: "ccc-prod",
+    baseUrlHint: "Base URL (ending in /v1) of a gateway that requires the Claude Code fingerprint. The system appends /messages and sends the full Claude Code client signature.",
+    modelIdPlaceholder: "e.g. claude-sonnet-4-6",
+    errorLabel: "Claude Code Compatible",
+    hasApiType: false,
+  },
+  codex: {
+    title: "Add Codex Compatible",
+    type: "codex-compatible",
+    defaultBaseUrl: "https://api.openai.com/v1",
+    namePlaceholder: "Codex Compatible (Prod)",
+    prefixPlaceholder: "cxc-prod",
+    baseUrlHint: "Base URL (ending in /v1) of a gateway that requires the Codex fingerprint. The system appends /responses and sends the full Codex CLI client signature.",
+    modelIdPlaceholder: "e.g. gpt-5.5",
+    errorLabel: "Codex Compatible",
+    hasApiType: false,
+  },
 };
 
 const API_TYPE_OPTIONS = [
@@ -212,7 +236,7 @@ function AddCompatibleModal({ variant, isOpen, onClose, onCreated }) {
 }
 
 AddCompatibleModal.propTypes = {
-  variant: PropTypes.oneOf(["openai", "anthropic"]).isRequired,
+  variant: PropTypes.oneOf(["openai", "anthropic", "claude-code", "codex"]).isRequired,
   isOpen: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   onCreated: PropTypes.func.isRequired,

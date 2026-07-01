@@ -1,5 +1,10 @@
 import { PROVIDERS } from "../config/providers.js";
-import { OPENAI_COMPAT_BASE, ANTHROPIC_COMPAT_BASE } from "../providers/shared.js";
+import {
+  OPENAI_COMPAT_BASE,
+  ANTHROPIC_COMPAT_BASE,
+  CLAUDE_CLI_SPOOF_HEADERS,
+  CODEX_CLI_SPOOF_HEADERS,
+} from "../providers/shared.js";
 
 const OPENAI_COMPATIBLE_PREFIX = "openai-compatible-";
 const OPENAI_COMPATIBLE_DEFAULTS = {
@@ -11,12 +16,25 @@ const ANTHROPIC_COMPATIBLE_DEFAULTS = {
   baseUrl: ANTHROPIC_COMPAT_BASE,
 };
 
+// Fingerprint-preserving compatible nodes (custom baseUrl + apiKey, but keep the full official-client
+// signature). claude-code-compatible-* is claude-format; codex-compatible-* is openai-responses.
+const CLAUDE_CODE_COMPATIBLE_PREFIX = "claude-code-compatible-";
+const CODEX_COMPATIBLE_PREFIX = "codex-compatible-";
+
 function isOpenAICompatible(provider) {
   return typeof provider === "string" && provider.startsWith(OPENAI_COMPATIBLE_PREFIX);
 }
 
 function isAnthropicCompatible(provider) {
   return typeof provider === "string" && provider.startsWith(ANTHROPIC_COMPATIBLE_PREFIX);
+}
+
+function isClaudeCodeCompatible(provider) {
+  return typeof provider === "string" && provider.startsWith(CLAUDE_CODE_COMPATIBLE_PREFIX);
+}
+
+function isCodexCompatible(provider) {
+  return typeof provider === "string" && provider.startsWith(CODEX_COMPATIBLE_PREFIX);
 }
 
 function getOpenAICompatibleType(provider) {
@@ -121,6 +139,25 @@ function getProviderConfig(provider) {
       baseUrl: ANTHROPIC_COMPATIBLE_DEFAULTS.baseUrl,
     };
   }
+  // Claude Code Compatible: claude wire format, but send the FULL Claude Code fingerprint so
+  // official-client-gated gateways accept it (buildHeaders keeps these, does NOT strip them).
+  if (isClaudeCodeCompatible(provider)) {
+    return {
+      ...PROVIDERS.anthropic,
+      format: "claude",
+      headers: { ...CLAUDE_CLI_SPOOF_HEADERS },
+      baseUrl: ANTHROPIC_COMPATIBLE_DEFAULTS.baseUrl,
+    };
+  }
+  // Codex Compatible: openai-responses wire format with the real codex CLI fingerprint headers.
+  if (isCodexCompatible(provider)) {
+    return {
+      ...PROVIDERS.openai,
+      format: "openai-responses",
+      headers: { ...CODEX_CLI_SPOOF_HEADERS },
+      baseUrl: OPENAI_COMPATIBLE_DEFAULTS.baseUrl,
+    };
+  }
   return PROVIDERS[provider] || PROVIDERS.openai;
 }
 
@@ -131,6 +168,12 @@ export function getTargetFormat(provider) {
   }
   if (isAnthropicCompatible(provider)) {
     return "claude";
+  }
+  if (isClaudeCodeCompatible(provider)) {
+    return "claude";
+  }
+  if (isCodexCompatible(provider)) {
+    return "openai-responses";
   }
   const config = getProviderConfig(provider);
   return config.format || "openai";

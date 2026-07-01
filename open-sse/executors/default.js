@@ -1,6 +1,6 @@
 import { BaseExecutor } from "./base.js";
 import { PROVIDERS, PROVIDER_OAUTH } from "../config/providers.js";
-import { ANTHROPIC_API_VERSION, OPENAI_COMPAT_BASE, ANTHROPIC_COMPAT_BASE } from "../providers/shared.js";
+import { ANTHROPIC_API_VERSION, OPENAI_COMPAT_BASE, ANTHROPIC_COMPAT_BASE, CLAUDE_CLI_SPOOF_HEADERS, CODEX_CLI_SPOOF_HEADERS } from "../providers/shared.js";
 import { OAUTH_ENDPOINTS, buildKimiHeaders } from "../config/appConstants.js";
 import { buildClineHeaders } from "../shared/clineAuth.js";
 import { getCachedClaudeHeaders } from "../utils/claudeHeaderCache.js";
@@ -132,6 +132,16 @@ export class DefaultExecutor extends BaseExecutor {
       const normalized = baseUrl.replace(/\/$/, "");
       return `${normalized}/messages`;
     }
+    // Claude Code Compatible: same claude /messages endpoint, custom baseUrl.
+    if (this.provider?.startsWith?.("claude-code-compatible-")) {
+      const baseUrl = credentials?.providerSpecificData?.baseUrl || ANTHROPIC_COMPAT_BASE;
+      return `${baseUrl.replace(/\/$/, "")}/messages`;
+    }
+    // Codex Compatible: openai-responses /responses endpoint, custom baseUrl.
+    if (this.provider?.startsWith?.("codex-compatible-")) {
+      const baseUrl = credentials?.providerSpecificData?.baseUrl || OPENAI_COMPAT_BASE;
+      return `${baseUrl.replace(/\/$/, "")}/responses`;
+    }
     // gemini-format: build :streamGenerateContent / :generateContent path
     if (this.config.format === "gemini") {
       return `${this.config.baseUrl}/${model}:${stream ? "streamGenerateContent?alt=sse" : "generateContent"}`;
@@ -154,6 +164,10 @@ export class DefaultExecutor extends BaseExecutor {
     if (this.provider?.startsWith?.("anthropic-compatible-")) {
       return { apiKey: { header: "x-api-key", scheme: "raw" }, oauth: { header: "Authorization", scheme: "bearer" }, anthropicVersion: true };
     }
+    // Claude Code Compatible: same auth as anthropic-compatible (x-api-key + optional Bearer).
+    if (this.provider?.startsWith?.("claude-code-compatible-")) {
+      return { apiKey: { header: "x-api-key", scheme: "raw" }, oauth: { header: "Authorization", scheme: "bearer" }, anthropicVersion: true };
+    }
     if (this.config?.format === "claude") {
       return { ...XAPIKEY, anthropicVersion: true };
     }
@@ -162,7 +176,13 @@ export class DefaultExecutor extends BaseExecutor {
 
   buildHeaders(credentials, stream = true) {
     const rt = credentials?.runtimeTransport;
-    const headers = { "Content-Type": "application/json", ...(rt ? rt.headers : this.config.headers) };
+    // Fingerprint-preserving compatible nodes: the DefaultExecutor's this.config is PROVIDERS.openai
+    // (dynamic ids aren't in the registry), so inject the full official-client signature here — the
+    // whole point of these node kinds is to LOOK like the real Claude Code / Codex CLI to a gate.
+    let baseFpHeaders = this.config.headers;
+    if (this.provider?.startsWith?.("claude-code-compatible-")) baseFpHeaders = CLAUDE_CLI_SPOOF_HEADERS;
+    else if (this.provider?.startsWith?.("codex-compatible-")) baseFpHeaders = CODEX_CLI_SPOOF_HEADERS;
+    const headers = { "Content-Type": "application/json", ...(rt ? rt.headers : baseFpHeaders) };
     const desc = rt?.auth || AUTH_DESCRIPTORS[this.provider] || this.resolveAuthDescriptor();
     // Hooks run BEFORE auth so dynamic overlays (claude cached headers) can't clobber the token.
     for (const hook of desc.hooks || []) HEADER_HOOKS[hook]?.(headers, credentials);

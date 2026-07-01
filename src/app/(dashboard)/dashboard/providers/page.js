@@ -100,6 +100,8 @@ export default function ProvidersPage() {
   const [loading, setLoading] = useState(true);
   const [showAllApikey, setShowAllApikey] = useState(false);
   const [showAddCompatibleModal, setShowAddCompatibleModal] = useState(false);
+  const [showAddClaudeCodeCompatibleModal, setShowAddClaudeCodeCompatibleModal] = useState(false);
+  const [showAddCodexCompatibleModal, setShowAddCodexCompatibleModal] = useState(false);
   const [showAddAnthropicCompatibleModal, setShowAddAnthropicCompatibleModal] =
     useState(false);
   const [testingMode, setTestingMode] = useState(null);
@@ -276,6 +278,26 @@ export default function ProvidersPage() {
     }))
     .filter((p) => matchSearch(p.name));
 
+  const claudeCodeCompatibleProviders = providerNodes
+    .filter((node) => node.type === "claude-code-compatible")
+    .map((node) => ({
+      id: node.id,
+      name: node.name || "Claude Code Compatible",
+      color: "#D97757",
+      textIcon: "CC",
+    }))
+    .filter((p) => matchSearch(p.name));
+
+  const codexCompatibleProviders = providerNodes
+    .filter((node) => node.type === "codex-compatible")
+    .map((node) => ({
+      id: node.id,
+      name: node.name || "Codex Compatible",
+      color: "#3B82F6",
+      textIcon: "CX",
+    }))
+    .filter((p) => matchSearch(p.name));
+
   const oauthEntries = sortByPriority(
     Object.entries(OAUTH_PROVIDERS).filter(([, info]) => !info.hidden && matchSearch(info.name)),
     "oauth",
@@ -328,7 +350,9 @@ export default function ProvidersPage() {
     freeTierEntries.length > 0 ||
     apikeyEntries.length > 0 ||
     compatibleProviders.length > 0 ||
-    anthropicCompatibleProviders.length > 0;
+    anthropicCompatibleProviders.length > 0 ||
+    claudeCodeCompatibleProviders.length > 0 ||
+    codexCompatibleProviders.length > 0;
 
   return (
     <div className="flex min-w-0 flex-col gap-6 px-1 sm:px-0">
@@ -365,17 +389,36 @@ export default function ProvidersPage() {
             >
               Add OpenAI Compatible
             </Button>
+            <Button
+              size="sm"
+              icon="add"
+              onClick={() => setShowAddClaudeCodeCompatibleModal(true)}
+              className="w-full sm:w-auto"
+            >
+              Add Claude Code Compatible
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              icon="add"
+              onClick={() => setShowAddCodexCompatibleModal(true)}
+              className="w-full sm:w-auto"
+            >
+              Add Codex Compatible
+            </Button>
           </div>
         </div>
         {compatibleProviders.length === 0 &&
-        anthropicCompatibleProviders.length === 0 ? (
+        anthropicCompatibleProviders.length === 0 &&
+        claudeCodeCompatibleProviders.length === 0 &&
+        codexCompatibleProviders.length === 0 ? (
           <div className="flex items-center justify-center gap-2 py-2 border border-dashed border-border rounded-xl text-text-muted text-sm">
             <span className="material-symbols-outlined text-[18px]">extension</span>
-            <span>No custom providers — use buttons above to add OpenAI/Anthropic compatible endpoints</span>
+            <span>No custom providers — use buttons above to add OpenAI/Anthropic/Claude Code/Codex compatible endpoints</span>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
-            {[...compatibleProviders, ...anthropicCompatibleProviders].map(
+            {[...compatibleProviders, ...anthropicCompatibleProviders, ...claudeCodeCompatibleProviders, ...codexCompatibleProviders].map(
               (info) => (
                 <ApiKeyProviderCard
                   key={info.id}
@@ -585,6 +628,24 @@ export default function ProvidersPage() {
         onCreated={(node) => {
           setProviderNodes((prev) => [...prev, node]);
           setShowAddAnthropicCompatibleModal(false);
+        }}
+      />
+      <AddCompatibleModal
+        variant="claude-code"
+        isOpen={showAddClaudeCodeCompatibleModal}
+        onClose={() => setShowAddClaudeCodeCompatibleModal(false)}
+        onCreated={(node) => {
+          setProviderNodes((prev) => [...prev, node]);
+          setShowAddClaudeCodeCompatibleModal(false);
+        }}
+      />
+      <AddCompatibleModal
+        variant="codex"
+        isOpen={showAddCodexCompatibleModal}
+        onClose={() => setShowAddCodexCompatibleModal(false)}
+        onCreated={(node) => {
+          setProviderNodes((prev) => [...prev, node]);
+          setShowAddCodexCompatibleModal(false);
         }}
       />
 

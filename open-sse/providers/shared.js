@@ -47,6 +47,13 @@ export const CLAUDE_CLI_SPOOF_HEADERS = {
   "X-Stainless-Timeout": "600"
 };
 
+// Full Codex CLI fingerprint — required by gateways that gate on the official Codex client identity.
+// Mirrors registry/codex.js transport.headers (the real `codex` CLI signature).
+export const CODEX_CLI_SPOOF_HEADERS = {
+  originator: "codex_cli_rs",
+  "User-Agent": "codex_cli_rs/0.136.0"
+};
+
 // Shared baseUrls
 export const KIMI_CODING_BASE_URL = "https://api.kimi.com/coding/v1/messages";
 

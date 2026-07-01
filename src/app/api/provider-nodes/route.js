@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createProviderNode, getProviderNodes } from "@/models";
-import { OPENAI_COMPATIBLE_PREFIX, ANTHROPIC_COMPATIBLE_PREFIX, CUSTOM_EMBEDDING_PREFIX } from "@/shared/constants/providers";
+import { OPENAI_COMPATIBLE_PREFIX, ANTHROPIC_COMPATIBLE_PREFIX, CUSTOM_EMBEDDING_PREFIX, CLAUDE_CODE_COMPATIBLE_PREFIX, CODEX_COMPATIBLE_PREFIX } from "@/shared/constants/providers";
 import { generateId } from "@/shared/utils";
 
 export const dynamic = "force-dynamic";
@@ -89,6 +89,41 @@ export async function POST(request) {
       const node = await createProviderNode({
         id: `${ANTHROPIC_COMPATIBLE_PREFIX}${generateId()}`,
         type: "anthropic-compatible",
+        prefix: prefix.trim(),
+        baseUrl: sanitizedBaseUrl,
+        name: name.trim(),
+      });
+      return NextResponse.json({ node }, { status: 201 });
+    }
+
+    // Claude Code Compatible: like anthropic-compatible (claude wire /messages), but at runtime the
+    // request keeps the FULL Claude Code fingerprint (see open-sse/services/provider.js + default.js).
+    if (nodeType === "claude-code-compatible") {
+      let sanitizedBaseUrl = (baseUrl || ANTHROPIC_COMPATIBLE_DEFAULTS.baseUrl).trim().replace(/\/$/, "");
+      if (sanitizedBaseUrl.endsWith("/messages")) {
+        sanitizedBaseUrl = sanitizedBaseUrl.slice(0, -9); // remove /messages
+      }
+
+      const node = await createProviderNode({
+        id: `${CLAUDE_CODE_COMPATIBLE_PREFIX}${generateId()}`,
+        type: "claude-code-compatible",
+        prefix: prefix.trim(),
+        baseUrl: sanitizedBaseUrl,
+        name: name.trim(),
+      });
+      return NextResponse.json({ node }, { status: 201 });
+    }
+
+    // Codex Compatible: openai-responses wire (/responses) with the full Codex CLI fingerprint.
+    if (nodeType === "codex-compatible") {
+      let sanitizedBaseUrl = (baseUrl || OPENAI_COMPATIBLE_DEFAULTS.baseUrl).trim().replace(/\/$/, "");
+      if (sanitizedBaseUrl.endsWith("/responses")) {
+        sanitizedBaseUrl = sanitizedBaseUrl.slice(0, -"/responses".length);
+      }
+
+      const node = await createProviderNode({
+        id: `${CODEX_COMPATIBLE_PREFIX}${generateId()}`,
+        type: "codex-compatible",
         prefix: prefix.trim(),
         baseUrl: sanitizedBaseUrl,
         name: name.trim(),

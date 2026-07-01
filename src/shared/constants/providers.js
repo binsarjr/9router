@@ -84,6 +84,12 @@ export const MEDIA_PROVIDER_KINDS = [
 export const OPENAI_COMPATIBLE_PREFIX = "openai-compatible-";
 export const ANTHROPIC_COMPATIBLE_PREFIX = "anthropic-compatible-";
 export const CUSTOM_EMBEDDING_PREFIX = "custom-embedding-";
+// Fingerprint-preserving compatible nodes: same custom baseUrl + apiKey model as the plain
+// *-compatible-* nodes, but the outgoing request keeps the FULL Claude Code / Codex client
+// fingerprint (identity headers, betas, Stainless) instead of stripping it — for gateways that
+// GATE on the official-client signature (e.g. cavoti, aerolink).
+export const CLAUDE_CODE_COMPATIBLE_PREFIX = "claude-code-compatible-";
+export const CODEX_COMPATIBLE_PREFIX = "codex-compatible-";
 
 export function isOpenAICompatibleProvider(providerId) {
   return typeof providerId === "string" && providerId.startsWith(OPENAI_COMPATIBLE_PREFIX);
@@ -95,6 +101,14 @@ export function isAnthropicCompatibleProvider(providerId) {
 
 export function isCustomEmbeddingProvider(providerId) {
   return typeof providerId === "string" && providerId.startsWith(CUSTOM_EMBEDDING_PREFIX);
+}
+
+export function isClaudeCodeCompatibleProvider(providerId) {
+  return typeof providerId === "string" && providerId.startsWith(CLAUDE_CODE_COMPATIBLE_PREFIX);
+}
+
+export function isCodexCompatibleProvider(providerId) {
+  return typeof providerId === "string" && providerId.startsWith(CODEX_COMPATIBLE_PREFIX);
 }
 
 // All providers (combined)

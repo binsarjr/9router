@@ -105,8 +105,9 @@ export async function POST(request) {
       });
     }
 
-    // Anthropic Compatible Validation
-    if (type === "anthropic-compatible") {
+    // Anthropic Compatible + Claude Code Compatible Validation (same claude /models probe).
+    // (codex-compatible falls through to the OpenAI /models probe below — same GET /models + Bearer.)
+    if (type === "anthropic-compatible" || type === "claude-code-compatible") {
       let normalizedBase = baseUrl.trim().replace(/\/$/, "");
       if (normalizedBase.endsWith("/messages")) {
         normalizedBase = normalizedBase.slice(0, -9);
