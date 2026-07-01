@@ -43,7 +43,9 @@ export function claudeToOpenAIResponse(chunk, state) {
       } else if (block?.type === CLAUDE_BLOCK.THINKING) {
         state.inThinkingBlock = true;
         state.currentBlockIndex = chunk.index;
-        results.push(createChunk(state, { content: "<think>" }));
+        // Do NOT emit a literal <think> tag into content — the thinking text is surfaced via
+        // reasoning_content (see thinking_delta below). Emitting the XML tag leaked an empty
+        // <think></think> block into the visible response for reasoning models.
       } else if (block?.type === CLAUDE_BLOCK.TOOL_USE) {
         const toolCallIndex = state.toolCallIndex++;
         // Restore original tool name from mapping (Claude OAuth)
@@ -94,7 +96,7 @@ export function claudeToOpenAIResponse(chunk, state) {
         break;
       }
       if (state.inThinkingBlock && chunk.index === state.currentBlockIndex) {
-        results.push(createChunk(state, { content: "</think>" }));
+        // Closing </think> tag intentionally not emitted (see content_block_start above).
         state.inThinkingBlock = false;
       }
       state.textBlockStarted = false;
